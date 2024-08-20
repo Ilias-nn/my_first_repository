@@ -5,7 +5,7 @@ API_URL = 'https://api.telegram.org/bot'
 API_CATS_URL = 'https://api.thecatapi.com/v1/images/search'
 API_DOGS_URL = 'https://random.dog/woof.json'
 API_FOXES_URL = 'https://randomfox.ca/floof/'
-BOT_TOKEN = '7442393174:AAGfi5ONskI6C8tbtb38hM9Nhb8S8EeCP44'
+BOT_TOKEN = 'token'
 ERROR_TEXT = 'Здесь должна была быть картинка :('
 err = 'Ты можешь выбрать между котом, лисой и собакой'
 
