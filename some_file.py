@@ -1,56 +1,60 @@
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 import requests
-import time
 
-API_URL = 'https://api.telegram.org/bot'
-API_CATS_URL = 'https://api.thecatapi.com/v1/images/search'
-API_DOGS_URL = 'https://random.dog/woof.json'
-API_FOXES_URL = 'https://randomfox.ca/floof/'
-BOT_TOKEN = 'token'
-ERROR_TEXT = 'Здесь должна была быть картинка :('
-err = 'Ты можешь выбрать между котом, лисой и собакой'
+BOT_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+GOOGLE_BOOKS_API_KEY = 'YOUR_GOOGLE_BOOKS_API_KEY'
 
-offset = -2
-counter = 0
-animal_response: requests.Response
-animal_link: str
-s = ''
+def start(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text('Привет! Введите название книги для поиска.')
 
-while counter < 10000:
-    print('attempt =', counter)
-    updates = requests.get(f'{API_URL}{BOT_TOKEN}/getUpdates?offset={offset + 1}').json()
+def search_books(update: Update, context: CallbackContext) -> None:
+    query = ' '.join(context.args)
+    if not query:
+        update.message.reply_text('Пожалуйста, введите название книги.')
+        return
+    
+    url = f'https://www.googleapis.com/books/v1/volumes?q={requests.utils.quote(query)}&key={GOOGLE_BOOKS_API_KEY}'
+    response = requests.get(url)
 
-    if 'result' in updates and updates['result']:
-        for result in updates['result']:
-            offset = result['update_id']
-            chat_id = result['message']['from']['id']
-            s = result['message']['text']
+    if response.status_code == 200:
+        data = response.json()
+        if 'items' in data:
+            books = data['items']
+            message = ''
+            for book in books[:5]:  # Показать до 5 книг
+                volume_info = book['volumeInfo']
+                title = volume_info.get('title', 'Нет названия')
+                authors = ', '.join(volume_info.get('authors', ['Нет авторов']))
+                message += f'Title: {title}\nAuthors: {authors}\n\n'
+            update.message.reply_text(message if message else 'Книги не найдены.')
+        else:
+            update.message.reply_text('Книги не найдены.')
+    else:
+        update.message.reply_text('Ошибка при запросе к API.')
 
-            if s == '/dog' or s == 'dog':
-                animal_response = requests.get(API_DOGS_URL)
-                if animal_response.status_code == 200:
-                    animal_link = animal_response.json()['url']
-                    requests.get(f'{API_URL}{BOT_TOKEN}/sendPhoto?chat_id={chat_id}&photo={animal_link}')
-                else:
-                    requests.get(f'{API_URL}{BOT_TOKEN}/sendMessage?chat_id={chat_id}&text={ERROR_TEXT}')
+def main() -> None:
+    updater = Updater(BOT_TOKEN)
 
-            elif s == '/fox' or s == 'fox':
-                animal_response = requests.get(API_FOXES_URL)
-                if animal_response.status_code == 200:
-                    animal_link = animal_response.json()['image']
-                    requests.get(f'{API_URL}{BOT_TOKEN}/sendPhoto?chat_id={chat_id}&photo={animal_link}')
-                else:
-                    requests.get(f'{API_URL}{BOT_TOKEN}/sendMessage?chat_id={chat_id}&text={ERROR_TEXT}')
+    dispatcher = updater.dispatcher
 
-            elif s == '/cat' or s == 'cat':
-                animal_response = requests.get(API_CATS_URL)
-                if animal_response.status_code == 200:
-                    animal_link = animal_response.json()[0]['url']
-                    requests.get(f'{API_URL}{BOT_TOKEN}/sendPhoto?chat_id={chat_id}&photo={animal_link}')
-                else:
-                    requests.get(f'{API_URL}{BOT_TOKEN}/sendMessage?chat_id={chat_id}&text={ERROR_TEXT}')
-                
-            else:
-                requests.get(f'{API_URL}{BOT_TOKEN}/sendMessage?chat_id={chat_id}&text={err}')
+    dispatcher.add_handler(CommandHandler('start', start))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, search_books))
 
-    # time.sleep(1)
-    counter += 1
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
+    # в гугл шитс надо загрузить
+# import gspread
+# from oauth2client.service_account import ServiceAccountCredentials
+
+# # Настройте доступ к Google Sheets
+# scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+# creds = ServiceAccountCredentials.from_json_keyfile_name('path/to/your/credentials.json', scope)
+# client = gspread.authorize(creds)
+# sheet = client.open('YourSpreadsheetName').sheet1
+
+# def add_to_sheet(title, authors):
+#     sheet.append_row([title, authors])
