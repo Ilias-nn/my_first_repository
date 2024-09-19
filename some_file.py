@@ -2,8 +2,8 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import requests  # Не забудьте этот импорт
 
-BOT_TOKEN = '8002034631:AAE9dQSDDqh4Qvz1g03COGf3SA8ppgn8JrM'
-GOOGLE_BOOKS_API_KEY = 'AIzaSyDssXLPBffyny4qrmUBJ9x6zlnPLo6-L_c'
+BOT_TOKEN = 'i'
+GOOGLE_BOOKS_API_KEY = ''
 
 async def start(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text('Привет! Введите название книги для поиска.')
